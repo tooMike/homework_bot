@@ -1,16 +1,14 @@
-from contextlib import suppress
-from http import HTTPStatus
 import logging
 import os
 import sys
 import time
+from contextlib import suppress
+from http import HTTPStatus
 
 import requests
 import telegram
 from dotenv import load_dotenv
 from telegram import Bot
-
-from exceptions import GetApiAnswerException
 
 load_dotenv()
 
@@ -77,8 +75,7 @@ def uniq_messages_only(func):
 def send_message(bot, message):
     """Отправляем сообщение в телеграме."""
     logger.debug("Начало отправки сообщения в телеграм")
-    chat_id = TELEGRAM_CHAT_ID
-    bot.send_message(chat_id, message)
+    bot.send_message(TELEGRAM_CHAT_ID, message)
     logger.debug(f"Сообщение '{message}' в телеграме успешно отправлено")
 
 
@@ -92,14 +89,14 @@ def get_api_answer(timestamp):
             params={"from_date": timestamp},
             timeout=RETRY_PERIOD,
         )
-        logger.debug("Успешное получение ответа API")
     except requests.RequestException as error:
         raise ConnectionError("Ошибка запроса на эндпоинт "
                               f"{ENDPOINT}: {error}")
     if response.status_code != HTTPStatus.OK:
         error_message = (f"Ошибка запроса на эндпоинт {ENDPOINT}: "
                          f"код ответа {response.status_code}")
-        raise GetApiAnswerException(error_message)
+        raise ValueError(error_message)
+    logger.debug("Успешное получение ответа API")
     return response.json()
 
 
@@ -136,8 +133,7 @@ def main():
     # если нет, то прерываем выполнение программы
     check_tokens()
     bot = Bot(token=TELEGRAM_TOKEN)
-    # timestamp = int(time.time())
-    timestamp = 1710028800
+    timestamp = int(time.time())
 
     while True:
         try:
@@ -149,8 +145,6 @@ def main():
                 homework = response["homeworks"][0]
                 message = parse_status(homework)
                 send_message(bot, message)
-                logger.debug(f"Сообщение '{message}' "
-                             "в телеграме успешно отправлено")
             else:
                 logger.debug("Получен пустой список домашек")
 
